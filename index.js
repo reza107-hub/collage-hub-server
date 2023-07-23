@@ -26,6 +26,8 @@ async function run() {
 
         const researchPaperCollections = client.db('collegeHubDb').collection('researchPaper')
 
+        const feedbackCollections = client.db('collegeHubDb').collection('feedback')
+
         app.get('/colleges', async (req, res) => {
             const result = await collegesCollections.find().toArray()
             res.send(result)
@@ -33,6 +35,11 @@ async function run() {
 
         app.get('/research-paper', async (req, res) => {
             const result = await researchPaperCollections.find().toArray()
+            res.send(result)
+        })
+
+        app.get('/feedback', async (req, res) => {
+            const result = await feedbackCollections.find().toArray()
             res.send(result)
         })
 
