@@ -23,10 +23,19 @@ const client = new MongoClient(uri, {
 async function run() {
     try {
         const collegesCollections = client.db('collegeHubDb').collection('colleges')
+
+        const researchPaperCollections = client.db('collegeHubDb').collection('researchPaper')
+
         app.get('/colleges', async (req, res) => {
             const result = await collegesCollections.find().toArray()
             res.send(result)
         })
+
+        app.get('/research-paper', async (req, res) => {
+            const result = await researchPaperCollections.find().toArray()
+            res.send(result)
+        })
+
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
     }
