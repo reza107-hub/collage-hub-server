@@ -2,7 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const app = express()
 const port = process.env.PORT || 3000
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 app.use(express.json())
 app.use(cors())
@@ -30,6 +30,8 @@ async function run() {
 
         const admissionCollection = client.db('collegeHubDb').collection('admission')
 
+        const usersCollection = client.db("collegeHubDb").collection("users");
+
         app.get('/colleges', async (req, res) => {
             const result = await collegesCollections.find().toArray()
             res.send(result)
@@ -50,10 +52,68 @@ async function run() {
             res.send(result)
         })
 
+        app.get('/users', async (req, res) => {
+            const result = await usersCollection.find().toArray()
+            res.send(result)
+        })
+
         app.post('/admission', async (req, res) => {
             const result = await admissionCollection.insertOne(req.body)
             res.send(result)
         })
+
+        app.post('/users', async (req, res) => {
+            const user = req.body;
+            const query = { email: user.email }
+            const existingUser = await usersCollection.findOne(query);
+            if (existingUser) {
+                return res.send({ message: 'user already exists' })
+            }
+            const result = await usersCollection.insertOne(req.body)
+            res.send(result)
+        })
+
+        app.patch('/college/:id', async (req, res) => {
+            const rating = parseInt(req.query.rating);
+            const result1 = await collegesCollections.find().toArray();
+            const id = req.params.id;
+            const getCollege = result1.find(college => college?._id == id);
+            const ratings = getCollege.ratings + rating;
+            const reviewCount = getCollege.reviewCount + 1;
+            const review = (ratings / reviewCount).toFixed(2);
+            const filter = { _id: new ObjectId(id) };
+
+            // ---------- for email............
+            const email = req.query.email;
+            const filterEmail = { email: email };
+            const updateUser = {
+                $set: {
+                    review: true
+                }
+            };
+
+            const updateDoc = {
+                $set: {
+                    ratings: ratings,
+                    reviewCount: reviewCount,
+                    review: parseFloat(review)
+                }
+            };
+
+            const options = { upsert: true };
+            const result = await collegesCollections.updateOne(filter, updateDoc, options);
+
+            const userResult = await usersCollection.updateOne(filterEmail, updateUser, options);
+
+            // Combine the results into a single response object and send it
+            const response = {
+                collegeResult: result,
+                userResult: userResult
+            };
+
+            res.send(response);
+        });
+
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
