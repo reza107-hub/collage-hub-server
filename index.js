@@ -58,6 +58,15 @@ async function run() {
         })
 
         app.post('/admission', async (req, res) => {
+            const email = req.query.email
+            const college = req.query.college
+
+            const updateDoc = {
+                $set: {
+                    institution: college
+                }
+            }
+            const userResult = await usersCollection.updateOne({ email: email }, updateDoc)
             const result = await admissionCollection.insertOne(req.body)
             res.send(result)
         })
@@ -113,6 +122,21 @@ async function run() {
 
             res.send(response);
         });
+
+        app.patch('/users', async (req, res) => {
+            const userData = req.body
+            const filter = { email: userData?.email }
+            const updateDoc = {
+                $set: {
+                    name: userData?.name,
+                    institution: userData?.institution,
+                    address: userData?.address
+                }
+            }
+            const options = { upsert: true };
+            const result = await usersCollection.updateOne(filter, updateDoc, options)
+            res.send(result)
+        })
 
 
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
